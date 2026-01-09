@@ -14,7 +14,7 @@ def display_image(image: np.ndarray, greyscale=False) -> None:
     if greyscale:
         plt.imshow(image, cmap='grey')
     else:
-        plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), cmap='grey')
+        plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
     plt.axis('off')
     plt.show()
     pass
