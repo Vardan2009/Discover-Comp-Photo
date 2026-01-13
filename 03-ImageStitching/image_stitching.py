@@ -13,42 +13,34 @@ def detect_features(img):
 
     img_with_keypoints = cv2.drawKeypoints(img, keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-    cv2.imshow("Keypoints", img_with_keypoints)
-    cv2.waitKey(0)                # Wait until a key is pressed
-
     return keypoints, descriptors
 
-
 def match_features(img1, kp1, des1, img2, kp2, des2):
-    # Create brute-force matcher using Hamming Distance, Use cv2.BFMatcher
+    matcher = cv2.BFMatcher(crossCheck=True)
+    matches = matcher.match(des1, des2)
 
-    # Find the matches between image 1 and image 2 (Hint: use the .match() method)
-    # matches = 
+    matches = sorted(matches, key=lambda x: x.distance)
 
-    # Sort the matches based on how close they are
-    # matches = 
+    final_img = cv2.drawMatches(img1, kp1, 
+                             img2, kp2, matches[:20], None)
 
-    # Draw the matches acorss both images (Hint: use the drawMatches() method)
-    # drawMatches = cv2.drawMatches()
-
-    cv2.imshow("Matches", drawMatches)
+    cv2.imshow("Matches", final_img)
     cv2.waitKey(0)
 
-    print(matches)
-    return matches[:200]         # Keep only the best 200 matches to remove outliers
-
+    return matches[:20]
 
 def extract_matched_points(kp1, kp2, matches):
-    # Build array of matched points from image 1 and extract (x,y) coordinates of matched keypoints
-    # pts1 = 
+    pts1 = np.float32([
+        kp1[m.queryIdx].pt
+        for m in matches
+    ]).reshape(-1, 1, 2)
+        
+    pts2 = np.float32([
+        kp2[m.queryIdx].pt
+        for m in matches
+    ]).reshape(-1, 1, 2)
         
     # Reshape the array to OpenCV-required format (N, 1, 2)
-
-    # Build array of matched points from image 2 and extract (x,y) coordinates of matched keypoints
-    # pts2 = 
-        
-    # Reshape the array to OpenCV-required format (N, 1, 2)
-
 
     print("First image matched points: ", pts1)
     print("Second image matched points: ", pts2)
@@ -104,6 +96,12 @@ def stitch_images(img1_path, img2_path):
     kp1, d1 = detect_features(img1)
     kp2, d2 = detect_features(img2)
 
+    matches = match_features(img1, kp1, d1, img2, kp2, d2)
+
+    pts1, pts2 = extract_matched_points(kp1, kp2, matches)
+
+    H = estimate_homography(pts1, pts2)
+
     return img1
 
 if __name__ == "__main__":
@@ -111,10 +109,10 @@ if __name__ == "__main__":
         "dresser_left.jpg",
         "dresser_right.jpg"
     )
-    cv2.imshow(                   # Display resulting panorama
-        "Panorama",
-        pano
-    )
-    cv2.waitKey(0)                # Wait indefinitely for a key press
-    cv2.destroyAllWindows()       # Close all OpenCV windows
+    # cv2.imshow(                   # Display resulting panorama
+        # "Panorama",
+        # pano
+    # )
+    # cv2.waitKey(0)                # Wait indefinitely for a key press
+    # cv2.destroyAllWindows()       # Close all OpenCV windows
 
