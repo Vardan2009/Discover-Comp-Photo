@@ -1,21 +1,18 @@
 import cv2
 import numpy as np
 
-
 def load_and_resize(path, scale=0.5):
-    # Resize the image to reduce computation, return the smaller image
-    return
-
+    img_fullscale = cv2.imread(path)
+    dsize = (int(img_fullscale.shape[1] * scale), int(img_fullscale.shape[0] * scale))
+    return cv2.resize(img_fullscale, dsize)
 
 def detect_features(img):
-    # Create ORB detector configured to find up to 2000 keypoints
+    orb = cv2.ORB_create()
+    img_bw = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    keypoints, descriptors = orb.detectAndCompute(img_bw, None)
 
-    # Use ORB method to detect keypoints
+    img_with_keypoints = cv2.drawKeypoints(img, keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-    # Draw keypoints using cv2.drawKeypoints() method. Search for documentation on this method using the internet
-    # img_with_keypoint = cv2.drawKeypoints()
-
-    # Display the image with keypoints
     cv2.imshow("Keypoints", img_with_keypoints)
     cv2.waitKey(0)                # Wait until a key is pressed
 
@@ -104,6 +101,10 @@ def stitch_images(img1_path, img2_path):
         img2_path
     )
 
+    kp1, d1 = detect_features(img1)
+    kp2, d2 = detect_features(img2)
+
+    return img1
 
 if __name__ == "__main__":
     pano = stitch_images(         # Run panorama stitching pipeline
