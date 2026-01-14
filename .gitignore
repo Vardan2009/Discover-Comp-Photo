@@ -3,6 +3,8 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+04-Composites_SOL/
+
 # C extensions
 *.so
 
