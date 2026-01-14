@@ -16,18 +16,20 @@ def detect_features(img):
     return keypoints, descriptors
 
 def match_features(img1, kp1, des1, img2, kp2, des2):
-    matcher = cv2.BFMatcher(crossCheck=True)
+    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     matches = matcher.match(des1, des2)
+
+    MATCH_N = 20
 
     matches = sorted(matches, key=lambda x: x.distance)
 
     final_img = cv2.drawMatches(img1, kp1, 
-                             img2, kp2, matches[:20], None)
+                             img2, kp2, matches[:MATCH_N], None)
 
     cv2.imshow("Matches", final_img)
     cv2.waitKey(0)
 
-    return matches[:20]
+    return matches[:MATCH_N]
 
 def extract_matched_points(kp1, kp2, matches):
     pts1 = np.float32([
@@ -36,7 +38,7 @@ def extract_matched_points(kp1, kp2, matches):
     ]).reshape(-1, 1, 2)
         
     pts2 = np.float32([
-        kp2[m.queryIdx].pt
+        kp2[m.trainIdx].pt
         for m in matches
     ]).reshape(-1, 1, 2)
         
@@ -64,7 +66,7 @@ def warp_image(img, H, output_size):
     cv2.waitKey(0)                # Wait indefinitely for a key press
 
     # Use cv2.warpPerspective() to warp the image based on H
-    # warped_image = cv2.warpPerspective()
+    warped_image = cv2.warpPerspective(img, H, output_size)
 
     cv2.imshow("Warped Image", warped_image)
     cv2.waitKey(0)
@@ -72,23 +74,18 @@ def warp_image(img, H, output_size):
     return warped_image
 
 
-
 def blend_images(img1, warped_img2):
-    panorama = warped_img2.copy() # Start panorama as warped img2
-
-    # Create mask of valid pixels in img1, value is True if at least one channel is nonzero in the pixel
-    # mask = 
-
-    # Use mask tooOverwrite panorama with valid image 1 data
-    # panorama = 
-
-    return panorama               # Return combined panorama image
+    panorama = warped_img2.copy()
+    h, w = img1.shape[:2]
+    panorama[:h, :w] = img1
+    return panorama
 
 
 def stitch_images(img1_path, img2_path):
     img1 = load_and_resize(       # Load and downscale first image
         img1_path
     )
+
     img2 = load_and_resize(       # Load and downscale second image
         img2_path
     )
@@ -102,17 +99,20 @@ def stitch_images(img1_path, img2_path):
 
     H = estimate_homography(pts1, pts2)
 
-    return img1
+    h, w = img1.shape[:2]
+    warped_img = warp_image(img2, H, (w * 2,h))
+
+    return blend_images(img1, warped_img)
 
 if __name__ == "__main__":
     pano = stitch_images(         # Run panorama stitching pipeline
-        "dresser_left.jpg",
-        "dresser_right.jpg"
+        "dresser_left.JPG",
+        "dresser_right.JPG"
     )
-    # cv2.imshow(                   # Display resulting panorama
-        # "Panorama",
-        # pano
-    # )
-    # cv2.waitKey(0)                # Wait indefinitely for a key press
-    # cv2.destroyAllWindows()       # Close all OpenCV windows
+    cv2.imshow(                   # Display resulting panorama
+        "Panorama",
+        pano
+    )
+    cv2.waitKey(0)                # Wait indefinitely for a key press
+    cv2.destroyAllWindows()       # Close all OpenCV windows
 
