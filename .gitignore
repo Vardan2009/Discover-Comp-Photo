@@ -5,6 +5,7 @@ __pycache__/
 
 .DS_Store
 04-Composites_SOL/
+composite_workflow/
 
 # C extensions
 *.so
